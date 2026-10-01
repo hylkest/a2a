@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "a2a handoff 1.0",
+  "type": "object",
+  "required": ["protocol", "version", "id", "createdAt", "task", "summary", "from", "to", "status", "decisions", "evidence", "questions", "nextSteps", "artifacts"],
+  "$defs": {
+    "text": { "type": "string", "minLength": 1, "pattern": "\\S" },
+    "entries": { "type": "array", "items": { "$ref": "#/$defs/text" } }
+  },
+  "properties": {
+    "protocol": { "const": "a2a" },
+    "version": { "const": "1.0" },
+    "id": { "$ref": "#/$defs/text" },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "task": { "$ref": "#/$defs/text" },
+    "summary": { "type": "string" },
+    "from": { "$ref": "#/$defs/text" },
+    "to": { "$ref": "#/$defs/text" },
+    "status": { "enum": ["ready", "blocked", "complete"] },
+    "decisions": { "$ref": "#/$defs/entries" },
+    "evidence": { "$ref": "#/$defs/entries" },
+    "questions": { "$ref": "#/$defs/entries" },
+    "nextSteps": { "$ref": "#/$defs/entries" },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["path", "sha256"],
+        "properties": {
+          "path": { "type": "string", "minLength": 1, "pattern": "^(?!/)(?![A-Za-z]:)(?!.*(?:^|[\\\\/])\\.\\.(?:[\\\\/]|$)).*\\S.*$" },
+          "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+        }
+      }
+    }
+  }
+}

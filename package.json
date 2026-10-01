@@ -1,0 +1,12 @@
+{
+  "name": "a2a",
+  "version": "0.1.0",
+  "description": "Portable, verifiable task handoffs between AI agents.",
+  "type": "module",
+  "license": "MIT",
+  "engines": { "node": ">=22" },
+  "bin": { "a2a": "bin/a2a.js" },
+  "exports": { ".": { "types": "./src/index.d.ts", "import": "./src/index.js" } },
+  "files": ["bin", "src", "schema", "README.md", "LICENSE"],
+  "scripts": { "test": "node --test", "check": "node --check src/index.js && node --check bin/a2a.js" }
+}
