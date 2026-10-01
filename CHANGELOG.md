@@ -51,3 +51,5 @@ This section describes the initial package baseline, not a published release.
 - SHA-256 artifact checks for changed, missing or unavailable files.
 - Workspace boundary checks for artifact paths and symlinks.
 - Automated tests, documentation and the MIT license.
+- Handoffs capture Git branch, commit and dirty state when available. Resume
+  compares the current checkout and highlights differences and uncommitted work.

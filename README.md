@@ -184,6 +184,25 @@ All fields are required; lists can be empty. Unknown fields are allowed for exte
 
 ## CLI behavior
 
+### Git context
+
+`handoff` and `init <file> --task ...` automatically record the workspace's
+Git branch, commit and whether it has uncommitted changes. Outside Git (or
+when Git is unavailable), creation continues without this optional field.
+Detached HEAD uses a null branch; repositories without commits use a null commit.
+The SDK exposes `captureGitContext({ root })`; assign its non-null result to
+`handoff.git` before saving. Existing handoffs remain compatible with protocol 1.0.
+
+`resume <file> [--root <workspace>]` displays the recorded context and compares
+it with the receiving checkout. Differences are advisory and do not change the
+exit code or switch branches. Dirty state is a boolean, not a snapshot: matching
+commits cannot prove that uncommitted work matches. Use `verify` for referenced
+files. Creating or editing a handoff can itself make a tracked workspace dirty.
+Existing editing commands do not refresh Git metadata; create a fresh handoff
+with `handoff --replace` to capture the current context.
+
+No remotes, diffs, credentials or file contents are stored in Git metadata.
+
 - Run `a2a --version` to show the installed package version (currently `0.2.0`).
   With a local npm dependency, use `npx --no-install a2a --version`; without
   npm, use `node /absolute/path/to/a2a/bin/a2a.js --version`.

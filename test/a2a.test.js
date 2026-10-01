@@ -5,6 +5,36 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
+import { captureGitContext } from '../src/index.js';
+
+test('Git context captures checkout state and resume detects different commits', async t => {
+  const root = await mkdtemp(path.join(tmpdir(), 'a2a-git-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const git = (...args) => execFileSync('git', args, { cwd: root, encoding: 'utf8', stdio: 'pipe' }).trim();
+  assert.equal(await captureGitContext({ root }), null);
+  git('init', '-b', 'develop');
+  git('config', 'user.name', 'Test'); git('config', 'user.email', 'test@example.test');
+  assert.deepEqual(await captureGitContext({ root }), { branch: 'develop', commit: null, dirty: false });
+  await writeFile(path.join(root, '.gitignore'), '.a2a/\n');
+  git('add', '.'); git('commit', '-m', 'initial');
+  const cli = path.resolve('bin/a2a.js');
+  const run = (...args) => execFileSync(process.execPath, [cli, ...args], { cwd: root, encoding: 'utf8', stdio: 'pipe' });
+  run('handoff', '--task', 'Review', '--summary', 'Ready');
+  const handoff = await readHandoff(path.join(root, '.a2a/handoff.json'));
+  assert.equal(handoff.git.commit, git('rev-parse', 'HEAD'));
+  assert.equal(handoff.git.dirty, false);
+  assert.match(run('resume', '.a2a/handoff.json'), /workspace is clean/);
+  await writeFile(path.join(root, 'new.txt'), 'new');
+  assert.equal((await captureGitContext({ root })).dirty, true);
+  assert.match(run('resume', '.a2a/handoff.json'), /Current workspace has uncommitted/);
+  git('add', '.'); git('commit', '-m', 'next'); git('switch', '-c', 'review');
+  const resumed = run('resume', '.a2a/handoff.json', '--root', root);
+  assert.match(resumed, /Branch differs: review/);
+  assert.match(resumed, /Commit differs:/);
+  git('checkout', '--detach');
+  assert.equal((await captureGitContext({ root })).branch, null);
+  assert.equal(validateHandoff({ ...handoff, git: { branch: 'main', commit: 'invalid', dirty: false } }).valid, false);
+});
 import { createHandoff, validateHandoff, addArtifact, verifyArtifacts, renderHandoff, writeHandoff, readHandoff } from '../src/index.js';
 
 test('version reports the package version from any workspace without setup', async t => {

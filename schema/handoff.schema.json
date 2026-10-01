@@ -10,6 +10,15 @@
   "properties": {
     "protocol": { "const": "a2a" },
     "version": { "const": "1.0" },
+    "git": {
+      "type": "object",
+      "required": ["branch", "commit", "dirty"],
+      "properties": {
+        "branch": { "anyOf": [{ "$ref": "#/$defs/text" }, { "type": "null" }] },
+        "commit": { "anyOf": [{ "type": "string", "pattern": "^(?:[a-f0-9]{40}|[a-f0-9]{64})$" }, { "type": "null" }] },
+        "dirty": { "type": "boolean" }
+      }
+    },
     "id": { "$ref": "#/$defs/text" },
     "createdAt": { "type": "string", "format": "date-time" },
     "task": { "$ref": "#/$defs/text" },
