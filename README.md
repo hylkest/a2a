@@ -58,7 +58,7 @@ different package if the local dependency is missing.
 Running `a2a init` without arguments:
 
 - Adds a marked instruction block to `AGENTS.md`, preserving existing text.
-- Creates `.a2a/` for local handoffs and adds it to `.gitignore`.
+- Creates `.a2a/` for handoffs without modifying `.gitignore`.
 - Can be repeated without duplicating instructions.
 
 Restart your agent session after setup. Agents that read `AGENTS.md` will
@@ -66,6 +66,19 @@ receive instructions to check `.a2a/handoff.json` at startup and update it
 before handing off work. Commit `AGENTS.md` to share the workflow with your team.
 For agents that use another instruction file, reference the a2a section of
 `AGENTS.md` from their project instructions.
+
+### Share handoffs with your team
+
+Commit reviewed `.a2a/` handoffs alongside the code so teammates and their
+agents receive the same context. Review for secrets and private information;
+a2a does not automatically redact them. Use separate handoff filenames when
+working on different tasks to reduce conflicts.
+
+Older versions added `.a2a/` to `.gitignore`. Remove that rule to enable
+sharing; setup leaves existing rules intact and prints a note when it finds
+an explicit `.a2a` rule. For broader or global ignore patterns, use
+`git check-ignore -v .a2a/handoff.json` to diagnose them.
+If you prefer private local handoffs, add `.a2a/` to `.gitignore` yourself.
 
 This is instruction-based integration, not an automatic lifecycle hook.
 An agent must follow the instructions and have command execution available.

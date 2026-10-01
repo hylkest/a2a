@@ -88,6 +88,7 @@ independently. Current user instructions take precedence over old next steps.
 Before stopping or handing off ongoing work, update .a2a/handoff.json with the
 current task, summary, decisions and reasons, checks actually performed, open
 questions, next steps and hashes of relevant files. Do not include secrets.
+Handoffs can be committed for teammates; review their contents before sharing.
 Use status complete when there is no remaining work; do not resume completed
 tasks unless the user asks. For a new task, use a new handoff file or explicitly
 replace the previous handoff after reading it.
@@ -117,10 +118,11 @@ before updating it; keep lists accurate rather than accumulating stale entries.
       let ignore = '';
       try { ignore = await readFile('.gitignore', 'utf8'); }
       catch (error) { if (error.code !== 'ENOENT') throw error; }
-      if (!ignore.split(/\r?\n/).some(line => ['.a2a/', '/.a2a/'].includes(line.trim()))) {
-        await writeFile('.gitignore', `${ignore}${ignore && !ignore.endsWith('\n') ? '\n' : ''}.a2a/\n`);
+      if (ignore.split(/\r?\n/).some(line => ['.a2a', '/.a2a', '.a2a/', '/.a2a/'].includes(line.trim()))) {
+        console.log('Note: .a2a is ignored by an existing .gitignore rule. Remove it to share handoffs through Git.');
       }
       console.log('Project ready. a2a instructions added to AGENTS.md; handoffs live in .a2a/.');
+      console.log('Commit reviewed handoffs to share context with your team. No ignore rules were added.');
       console.log('Restart your agent session so it reads the project instructions.');
     } else {
     const task = option('task'); const from = option('from', 'unknown'); const to = option('to', 'any');

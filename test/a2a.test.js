@@ -62,7 +62,7 @@ test('project setup preserves instructions and is idempotent', async t => {
   assert.match(instructions, /npx --no-install a2a/);
   run('init');
   assert.equal(await readFile(path.join(root, 'AGENTS.md'), 'utf8'), instructions);
-  assert.equal(await readFile(path.join(root, '.gitignore'), 'utf8'), 'node_modules/\n.a2a/\n');
+  assert.equal(await readFile(path.join(root, '.gitignore'), 'utf8'), 'node_modules/');
   run('init', '.a2a/handoff.json', '--task', 'Continue implementation');
   assert.match(run('resume', '.a2a/handoff.json'), /Continue implementation/);
 });
@@ -72,7 +72,17 @@ test('project setup creates instructions in a new project', async t => {
   t.after(() => rm(root, { recursive: true, force: true }));
   execFileSync(process.execPath, [path.resolve('bin/a2a.js'), 'init'], { cwd: root });
   assert.match(await readFile(path.join(root, 'AGENTS.md'), 'utf8'), /a2a handoffs/);
-  assert.equal(await readFile(path.join(root, '.gitignore'), 'utf8'), '.a2a/\n');
+  await assert.rejects(readFile(path.join(root, '.gitignore'), 'utf8'), { code: 'ENOENT' });
+});
+
+test('setup preserves existing ignore rules and explains how to share handoffs', async t => {
+  const root = await mkdtemp(path.join(tmpdir(), 'a2a-ignored-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const ignore = 'node_modules/\n.a2a/\n';
+  await writeFile(path.join(root, '.gitignore'), ignore);
+  const output = execFileSync(process.execPath, [path.resolve('bin/a2a.js'), 'init'], { cwd: root, encoding: 'utf8' });
+  assert.match(output, /Remove it to share handoffs/);
+  assert.equal(await readFile(path.join(root, '.gitignore'), 'utf8'), ignore);
 });
 
 test('protocol validates required fields, versions and entry types', () => {
