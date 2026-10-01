@@ -1,5 +1,19 @@
 # Changelog
 
+User-facing changes to a2a are recorded here. New changes belong under
+**Unreleased** until a release is published. Package and handoff protocol
+versions are independent.
+
+## [Unreleased]
+
+### Added
+
+- This changelog to track user-facing changes and release notes.
+
+### Changed
+
+- Package metadata updated to version `0.2.0` to match the published release.
+
 ## [0.2.0]
 
 ### Added
