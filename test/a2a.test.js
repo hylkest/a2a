@@ -77,6 +77,37 @@ test('project setup preserves instructions and is idempotent', async t => {
   assert.match(run('resume', '.a2a/handoff.json'), /Continue implementation/);
 });
 
+test('setup refreshes old instructions and preserves surrounding text exactly', async t => {
+  const root = await mkdtemp(path.join(tmpdir(), 'a2a-refresh-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const file = path.join(root, 'AGENTS.md');
+  const before = '# Custom rules\r\nKeep this.\r\n';
+  const after = '\r\n## More rules\r\nKeep these too.';
+  await writeFile(file, `${before}<!-- a2a:instructions -->\nOld commands\n<!-- /a2a:instructions -->${after}`);
+  const run = () => execFileSync(process.execPath, [path.resolve('bin/a2a.js'), 'init'], { cwd: root, encoding: 'utf8' });
+  assert.match(run(), /instructions updated/);
+  const updated = await readFile(file, 'utf8');
+  assert.ok(updated.startsWith(before));
+  assert.ok(updated.endsWith(after));
+  assert.match(updated, /a2a handoff --task/);
+  assert.ok(!updated.includes('Old commands'));
+  assert.match(run(), /already current/);
+  assert.equal(await readFile(file, 'utf8'), updated);
+});
+
+test('setup refuses malformed or duplicate managed blocks without changing the file', async t => {
+  const root = await mkdtemp(path.join(tmpdir(), 'a2a-markers-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const file = path.join(root, 'AGENTS.md');
+  const start = '<!-- a2a:instructions -->';
+  const end = '<!-- /a2a:instructions -->';
+  for (const content of [start, end, end + start, start + end + start + end]) {
+    await writeFile(file, content);
+    assert.throws(() => execFileSync(process.execPath, [path.resolve('bin/a2a.js'), 'init'], { cwd: root, stdio: 'pipe' }), error => error.status === 2);
+    assert.equal(await readFile(file, 'utf8'), content);
+  }
+});
+
 test('project setup creates instructions in a new project', async t => {
   const root = await mkdtemp(path.join(tmpdir(), 'a2a-new-'));
   t.after(() => rm(root, { recursive: true, force: true }));

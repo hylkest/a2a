@@ -9,6 +9,12 @@ versions are independent.
 ### Added
 
 - `a2a --version` displays the installed package version from any directory.
+
+### Fixed
+
+- Re-running `a2a init` now refreshes existing agent instructions while preserving
+  project rules outside the managed block. Invalid or duplicate block markers
+  are rejected without modifying the file.
 - This changelog to track user-facing changes and release notes.
 
 ### Changed

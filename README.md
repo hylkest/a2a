@@ -59,7 +59,14 @@ Running `a2a init` without arguments:
 
 - Adds a marked instruction block to `AGENTS.md`, preserving existing text.
 - Creates `.a2a/` for handoffs without modifying `.gitignore`.
-- Can be repeated without duplicating instructions.
+- Updates an existing marked a2a instruction block to the current template.
+- Preserves all text outside that block and avoids rewriting unchanged instructions.
+
+After upgrading a2a, run `a2a init` again to refresh the agent instructions.
+Keep custom rules (including npm-free command overrides) outside the managed
+`<!-- a2a:instructions -->` block; its contents are replaced during updates.
+Reapply npm-free command replacements after updating. Incomplete, reversed or
+duplicate markers cause an error without changing `AGENTS.md`.
 
 Restart your agent session after setup. Agents that read `AGENTS.md` will
 receive instructions to check `.a2a/handoff.json` at startup and update it

@@ -81,7 +81,14 @@ try {
       let existing = '';
       try { existing = await readFile('AGENTS.md', 'utf8'); }
       catch (error) { if (error.code !== 'ENOENT') throw error; }
-      if (!existing.includes(marker)) {
+      const endMarker = '<!-- /a2a:instructions -->';
+      const starts = existing.split(marker).length - 1;
+      const ends = existing.split(endMarker).length - 1;
+      const start = existing.indexOf(marker);
+      const end = existing.indexOf(endMarker);
+      if (starts > 1 || ends > 1 || starts !== ends || (starts === 1 && end < start)) {
+        throw new Error('AGENTS.md has malformed or duplicate a2a markers. Repair the instruction block before running init. No instructions were changed.');
+      }
         const instructions = `${marker}
 ## a2a handoffs
 
@@ -118,8 +125,11 @@ The SDK can also write the complete handoff as JSON. Read the existing file
 before updating it; keep lists accurate rather than accumulating stale entries.
 <!-- /a2a:instructions -->
 `;
-        await writeFile('AGENTS.md', `${existing}${existing && !existing.endsWith('\n') ? '\n' : ''}\n${instructions}`);
-      }
+      const block = instructions.trimEnd();
+      const updated = starts === 1
+        ? existing.slice(0, start) + block + existing.slice(end + endMarker.length)
+        : `${existing}${existing && !existing.endsWith('\n') ? '\n' : ''}\n${instructions}`;
+      if (updated !== existing) await writeFile('AGENTS.md', updated);
       await mkdir('.a2a', { recursive: true });
       let ignore = '';
       try { ignore = await readFile('.gitignore', 'utf8'); }
@@ -127,7 +137,7 @@ before updating it; keep lists accurate rather than accumulating stale entries.
       if (ignore.split(/\r?\n/).some(line => ['.a2a', '/.a2a', '.a2a/', '/.a2a/'].includes(line.trim()))) {
         console.log('Note: .a2a is ignored by an existing .gitignore rule. Remove it to share handoffs through Git.');
       }
-      console.log('Project ready. a2a instructions added to AGENTS.md; handoffs live in .a2a/.');
+      console.log(`Project ready. a2a instructions ${updated === existing ? 'already current' : starts ? 'updated' : 'added'} in AGENTS.md; handoffs live in .a2a/.`);
       console.log('Commit reviewed handoffs to share context with your team. No ignore rules were added.');
       console.log('Restart your agent session so it reads the project instructions.');
     } else {
