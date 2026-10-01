@@ -7,6 +7,48 @@ import { execFileSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { createHandoff, validateHandoff, addArtifact, verifyArtifacts, renderHandoff, writeHandoff, readHandoff } from '../src/index.js';
 
+test('handoff saves a complete snapshot with checked artifacts in one command', async t => {
+  const root = await mkdtemp(path.join(tmpdir(), 'a2a-handoff-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const cli = path.resolve('bin/a2a.js');
+  const run = (...args) => execFileSync(process.execPath, [cli, ...args], { cwd: root, encoding: 'utf8', stdio: 'pipe' });
+  await writeFile(path.join(root, 'app.js'), 'implementation');
+  run('handoff', '--task', 'Build login', '--summary', 'Review needed', '--from', 'builder', '--to', 'reviewer', '--decision', 'Use sessions', '--decision', 'Validate server-side', '--evidence', 'Tests passed', '--question', 'Session duration?', '--next', 'Review', '--artifact', 'app.js', '--artifact', 'app.js');
+  const file = path.join(root, '.a2a/handoff.json');
+  const handoff = await readHandoff(file);
+  assert.equal(handoff.from, 'builder');
+  assert.equal(handoff.to, 'reviewer');
+  assert.deepEqual(handoff.decisions, ['Use sessions', 'Validate server-side']);
+  assert.deepEqual(handoff.evidence, ['Tests passed']);
+  assert.deepEqual(handoff.questions, ['Session duration?']);
+  assert.deepEqual(handoff.nextSteps, ['Review']);
+  assert.equal(handoff.artifacts.length, 1);
+  assert.match(run('verify', file), /unchanged/);
+  const original = await readFile(file, 'utf8');
+  assert.throws(() => run('handoff', '--task', 'New', '--summary', 'New snapshot'), error => error.status === 2);
+  assert.throws(() => run('handoff', '--replace', '--task', 'New', '--summary', 'New snapshot', '--artifact', 'missing.js'), error => error.status === 2);
+  assert.equal(await readFile(file, 'utf8'), original);
+  run('handoff', '--replace', '--task', 'Build login', '--summary', 'Done', '--status', 'complete');
+  const updated = await readHandoff(file);
+  assert.equal(updated.status, 'complete');
+  assert.deepEqual(updated.decisions, []);
+  assert.deepEqual(updated.artifacts, []);
+});
+
+test('handoff rejects incomplete and unknown inputs and supports custom destination/root', async t => {
+  const root = await mkdtemp(path.join(tmpdir(), 'a2a-input-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const cli = path.resolve('bin/a2a.js');
+  const run = (...args) => execFileSync(process.execPath, [cli, ...args], { cwd: root, encoding: 'utf8', stdio: 'pipe' });
+  assert.throws(() => run('handoff', '--task', 'Task'), error => error.status === 2);
+  assert.throws(() => run('handoff', '--summary', 'Summary'), error => error.status === 2);
+  assert.throws(() => run('handoff', '--task', 'Task', '--summary', 'Summary', '--unknown'), error => error.status === 2);
+  assert.throws(() => run('handoff', '--task', 'Task', '--summary', 'Summary', '--next'), error => error.status === 2);
+  await writeFile(path.join(root, 'evidence.txt'), 'result');
+  run('handoff', 'nested/review.json', '--task', 'Review', '--summary', 'Ready', '--root', root, '--artifact', 'evidence.txt');
+  assert.equal((await readHandoff(path.join(root, 'nested/review.json'))).artifacts[0].path, 'evidence.txt');
+});
+
 test('project setup preserves instructions and is idempotent', async t => {
   const root = await mkdtemp(path.join(tmpdir(), 'a2a-setup-'));
   t.after(() => rm(root, { recursive: true, force: true }));

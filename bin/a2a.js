@@ -7,6 +7,7 @@ const help = `a2a — portable agent handoffs
 Commands:
   init                              Set up agent instructions in this project
   init <file> --task <goal> [--from <agent>] [--to <agent>]
+  handoff [file] --task <goal> --summary <text> [options]
   add <file> <decision|evidence|question|next|artifact> <value>
   summary <file> <text>
   status <file> <ready|blocked|complete>
@@ -16,6 +17,9 @@ Commands:
 
 Artifact paths are relative to the current workspace.
 init refuses to overwrite an existing file. resume writes Markdown to stdout.
+handoff defaults to .a2a/handoff.json. Repeat --decision, --evidence,
+--question, --next and --artifact. Optional: --from, --to, --status, --root.
+Use --replace to replace an existing handoff with a complete new snapshot.
 `;
 const args = process.argv.slice(2);
 const command = args.shift();
@@ -25,6 +29,11 @@ function option(name, fallback) {
   if (!args[i + 1] || args[i + 1].startsWith('--')) throw new Error(`--${name} requires a value`);
   const value = args[i + 1]; args.splice(i, 2); return value;
 }
+function repeatedOption(name) {
+  const values = [];
+  while (args.includes(`--${name}`)) values.push(option(name));
+  return values;
+}
 async function save(file, handoff) {
   const result = validateHandoff(handoff);
   if (!result.valid) throw new Error(result.errors.join('\n'));
@@ -32,6 +41,34 @@ async function save(file, handoff) {
 }
 try {
   if (!command || ['help', '--help', '-h'].includes(command)) console.log(help);
+  else if (command === 'handoff') {
+    const replaceIndex = args.indexOf('--replace');
+    const replace = replaceIndex >= 0;
+    if (replace) args.splice(replaceIndex, 1);
+    const task = option('task');
+    const summary = option('summary');
+    const from = option('from', 'unknown');
+    const to = option('to', 'any');
+    const status = option('status', 'ready');
+    const root = option('root', process.cwd());
+    const entries = {
+      decisions: repeatedOption('decision'), evidence: repeatedOption('evidence'),
+      questions: repeatedOption('question'), nextSteps: repeatedOption('next'),
+    };
+    const artifacts = repeatedOption('artifact');
+    if (args.length > 1 || args.some(arg => arg.startsWith('--'))) throw new Error('Usage: handoff [file] --task <goal> --summary <text> [options]');
+    if (typeof summary !== 'string' || !summary.trim()) throw new Error('--summary requires a non-empty value');
+    const handoff = Object.assign(createHandoff({ task, summary, from, to, status }), entries);
+    const result = validateHandoff(handoff);
+    if (!result.valid) throw new Error(result.errors.join('\n'));
+    // Finish validation and hash every reference before touching the destination.
+    for (const artifact of artifacts) await addArtifact(handoff, artifact, { root });
+    const file = args[0] ?? '.a2a/handoff.json';
+    const { dirname } = await import('node:path');
+    await mkdir(dirname(file), { recursive: true });
+    await writeFile(file, `${JSON.stringify(handoff, null, 2)}\n`, { flag: replace ? 'w' : 'wx' });
+    console.log(`Saved ${file} (${handoff.artifacts.length} checked artifacts)`);
+  }
   else if (command === 'init') {
     if (!args.length) {
       const marker = '<!-- a2a:instructions -->';
@@ -56,6 +93,8 @@ tasks unless the user asks. For a new task, use a new handoff file or explicitly
 replace the previous handoff after reading it.
 
 Commands:
+- npx --no-install a2a handoff --task "Your current task" --summary "Current state" --decision "Choice and reason" --evidence "Check and result" --next "Next action" --artifact path/to/file
+- Add --replace when updating an existing handoff; provide a complete snapshot.
 - npx --no-install a2a init .a2a/handoff.json --task "Your current task"
 - npx --no-install a2a summary .a2a/handoff.json "Current state"
 - npx --no-install a2a add .a2a/handoff.json decision "Choice and reason"

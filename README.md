@@ -73,6 +73,38 @@ It cannot write a handoff after a crash or an abruptly closed session. Ask
 “save a handoff” before closing, and “continue from the handoff” when needed.
 Completed handoffs are not instructions to restart completed work.
 
+## Save a complete handoff in one command
+
+From your project directory, after installing a2a:
+
+```bash
+npx --no-install a2a handoff \
+  --task "Build login" \
+  --summary "Implementation is ready for review." \
+  --from implementer --to reviewer \
+  --decision "Validate server-side because client checks can be bypassed." \
+  --evidence "Unit tests passed; sandbox check is still pending." \
+  --question "How long should sessions remain valid?" \
+  --next "Review validation and run the sandbox check." \
+  --artifact src/login.js
+```
+
+This creates `.a2a/handoff.json` and its parent directory. Each referenced
+file is read and hashed before saving; missing or inaccessible artifacts
+fail the command without changing an existing handoff. Use actual file paths
+from your project. Hashes capture the current file state, not proof that tests passed.
+
+Repeat `--decision`, `--evidence`, `--question`, `--next` and `--artifact`
+for multiple entries. Set `--status ready|blocked|complete` (default `ready`).
+Use an optional positional filename for a custom destination and `--root`
+for the workspace used to resolve artifact paths.
+
+Existing handoffs are protected. To update one, read it first, then run the
+command with **`--replace` and a complete snapshot**. This replaces all fields
+and gives the new handoff a fresh ID and timestamp; it does not merge old lists.
+Omitted lists become empty. Without npm, replace `npx --no-install a2a` with
+`node /absolute/path/to/a2a/bin/a2a.js`.
+
 ## Try it locally
 
 ```bash
