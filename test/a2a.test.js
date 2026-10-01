@@ -4,7 +4,34 @@ import { mkdtemp, writeFile, symlink, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
+import { readFile } from 'node:fs/promises';
 import { createHandoff, validateHandoff, addArtifact, verifyArtifacts, renderHandoff, writeHandoff, readHandoff } from '../src/index.js';
+
+test('project setup preserves instructions and is idempotent', async t => {
+  const root = await mkdtemp(path.join(tmpdir(), 'a2a-setup-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  await writeFile(path.join(root, 'AGENTS.md'), '# Project rules\nKeep these instructions.');
+  await writeFile(path.join(root, '.gitignore'), 'node_modules/');
+  const cli = path.resolve('bin/a2a.js');
+  const run = (...args) => execFileSync(process.execPath, [cli, ...args], { cwd: root, encoding: 'utf8' });
+  run('init');
+  const instructions = await readFile(path.join(root, 'AGENTS.md'), 'utf8');
+  assert.ok(instructions.startsWith('# Project rules\nKeep these instructions.\n'));
+  assert.match(instructions, /npx --no-install a2a/);
+  run('init');
+  assert.equal(await readFile(path.join(root, 'AGENTS.md'), 'utf8'), instructions);
+  assert.equal(await readFile(path.join(root, '.gitignore'), 'utf8'), 'node_modules/\n.a2a/\n');
+  run('init', '.a2a/handoff.json', '--task', 'Continue implementation');
+  assert.match(run('resume', '.a2a/handoff.json'), /Continue implementation/);
+});
+
+test('project setup creates instructions in a new project', async t => {
+  const root = await mkdtemp(path.join(tmpdir(), 'a2a-new-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  execFileSync(process.execPath, [path.resolve('bin/a2a.js'), 'init'], { cwd: root });
+  assert.match(await readFile(path.join(root, 'AGENTS.md'), 'utf8'), /a2a handoffs/);
+  assert.equal(await readFile(path.join(root, '.gitignore'), 'utf8'), '.a2a/\n');
+});
 
 test('protocol validates required fields, versions and entry types', () => {
   const h = createHandoff({ task: 'Fix checkout' });

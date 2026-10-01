@@ -6,6 +6,73 @@ An agent can hand over what it did, why it made decisions, what it checked, what
 
 **Status:** working initial release, not published to npm. Requires Node.js 22+. a2a stands for agent to agent. This project implements a file-based handoff format; it does not implement the separate Agent2Agent interoperability protocol.
 
+## Installation
+
+Requires **Node.js 22 or newer**. Choose either installation method below.
+
+### Option 1: Install from GitHub with npm
+
+Once the latest changes are pushed to GitHub, run these commands in the
+project where your agents work:
+
+```bash
+cd your-project
+npm install --save-dev git+https://github.com/hylkest/a2a.git
+npx --no-install a2a init
+```
+
+This package is not published to npm. Do not use `npm install a2a` expecting
+this project. For reproducible installs, pin a release tag or commit in the
+GitHub dependency URL. Commit your package.json and lockfile.
+
+### Option 2: Clone and run without npm
+
+a2a has no external dependencies. You only need Git and Node.js:
+
+```bash
+git clone https://github.com/hylkest/a2a.git ~/a2a
+cd /absolute/path/to/your-project
+node ~/a2a/bin/a2a.js init
+```
+
+The setup currently generates commands using `npx --no-install a2a`.
+For this npm-free method, replace **every occurrence** of that command in
+your project's `AGENTS.md` with `node /absolute/path/to/a2a/bin/a2a.js`.
+Use the actual absolute path to your clone, so your agent can execute it.
+
+Run subsequent commands from your own project directory, for example:
+
+```bash
+node ~/a2a/bin/a2a.js init .a2a/handoff.json --task "Build a login"
+node ~/a2a/bin/a2a.js resume .a2a/handoff.json
+```
+
+You do not need `npm install` or a global installation. Restart your agent
+session after setting up the project and adjusting the instructions.
+
+With the npm method, `--no-install` prevents commands from fetching a
+different package if the local dependency is missing.
+
+## Set up your agent
+
+Running `a2a init` without arguments:
+
+- Adds a marked instruction block to `AGENTS.md`, preserving existing text.
+- Creates `.a2a/` for local handoffs and adds it to `.gitignore`.
+- Can be repeated without duplicating instructions.
+
+Restart your agent session after setup. Agents that read `AGENTS.md` will
+receive instructions to check `.a2a/handoff.json` at startup and update it
+before handing off work. Commit `AGENTS.md` to share the workflow with your team.
+For agents that use another instruction file, reference the a2a section of
+`AGENTS.md` from their project instructions.
+
+This is instruction-based integration, not an automatic lifecycle hook.
+An agent must follow the instructions and have command execution available.
+It cannot write a handoff after a crash or an abruptly closed session. Ask
+“save a handoff” before closing, and “continue from the handoff” when needed.
+Completed handoffs are not instructions to restart completed work.
+
 ## Try it locally
 
 ```bash
@@ -65,7 +132,7 @@ All fields are required; lists can be empty. Unknown fields are allowed for exte
 
 ## CLI behavior
 
-- `init` refuses to overwrite a file. `add`, `summary` and `status` update it.
+- `init` without arguments configures the project; `init <file> --task <goal>` refuses to overwrite a handoff file. `add`, `summary` and `status` update it.
 - `verify` compares artifacts with the current filesystem. `--root` selects the receiving workspace.
 - Exit codes: `0` success, `1` artifact mismatch/unavailability, `2` invalid input or operational error.
 - Artifact traversal and symlinks resolving outside the workspace are rejected.
@@ -75,7 +142,7 @@ All fields are required; lists can be empty. Unknown fields are allowed for exte
 
 Ask your agent to create a handoff before stopping or delegating:
 
-> Write a a2a handoff. Include the task, current state, decisions with reasons, checks actually performed, open questions and concrete next steps. Reference the files another agent should inspect. Clearly distinguish observations from assumptions.
+> Write an a2a handoff. Include the task, current state, decisions with reasons, checks actually performed, open questions and concrete next steps. Reference the files another agent should inspect. Clearly distinguish observations from assumptions.
 
 For the receiving agent:
 
