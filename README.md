@@ -177,6 +177,9 @@ All fields are required; lists can be empty. Unknown fields are allowed for exte
 
 ## CLI behavior
 
+- Run `a2a --version` to show the installed package version (currently `0.2.0`).
+  With a local npm dependency, use `npx --no-install a2a --version`; without
+  npm, use `node /absolute/path/to/a2a/bin/a2a.js --version`.
 - `init` without arguments configures the project; `init <file> --task <goal>` refuses to overwrite a handoff file. `add`, `summary` and `status` update it.
 - `verify` compares artifacts with the current filesystem. `--root` selects the receiving workspace.
 - Exit codes: `0` success, `1` artifact mismatch/unavailability, `2` invalid input or operational error.

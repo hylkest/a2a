@@ -7,6 +7,16 @@ import { execFileSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { createHandoff, validateHandoff, addArtifact, verifyArtifacts, renderHandoff, writeHandoff, readHandoff } from '../src/index.js';
 
+test('version reports the package version from any workspace without setup', async t => {
+  const root = await mkdtemp(path.join(tmpdir(), 'a2a-version-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const cli = path.resolve('bin/a2a.js');
+  const pkg = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
+  const output = execFileSync(process.execPath, [cli, '--version'], { cwd: root, encoding: 'utf8' });
+  assert.equal(output, `${pkg.version}\n`);
+  await assert.rejects(readFile(path.join(root, 'AGENTS.md')), { code: 'ENOENT' });
+});
+
 test('handoff saves a complete snapshot with checked artifacts in one command', async t => {
   const root = await mkdtemp(path.join(tmpdir(), 'a2a-handoff-'));
   t.after(() => rm(root, { recursive: true, force: true }));

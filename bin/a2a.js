@@ -5,6 +5,7 @@ import { createHandoff, addArtifact, readHandoff, renderHandoff, validateHandoff
 const help = `a2a — portable agent handoffs
 
 Commands:
+  --version                         Show the installed package version
   init                              Set up agent instructions in this project
   init <file> --task <goal> [--from <agent>] [--to <agent>]
   handoff [file] --task <goal> --summary <text> [options]
@@ -40,7 +41,12 @@ async function save(file, handoff) {
   await writeFile(file, `${JSON.stringify(handoff, null, 2)}\n`);
 }
 try {
-  if (!command || ['help', '--help', '-h'].includes(command)) console.log(help);
+  if (command === '--version') {
+    if (args.length) throw new Error('Usage: a2a --version');
+    const pkg = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
+    console.log(pkg.version);
+  }
+  else if (!command || ['help', '--help', '-h'].includes(command)) console.log(help);
   else if (command === 'handoff') {
     const replaceIndex = args.indexOf('--replace');
     const replace = replaceIndex >= 0;

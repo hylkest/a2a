@@ -8,6 +8,7 @@ versions are independent.
 
 ### Added
 
+- `a2a --version` displays the installed package version from any directory.
 - This changelog to track user-facing changes and release notes.
 
 ### Changed
