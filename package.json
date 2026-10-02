@@ -1,12 +1,12 @@
 {
-  "name": "a2a",
-  "version": "0.2.0",
+  "name": "s2s",
+  "version": "0.3.0",
   "description": "Portable, verifiable task handoffs between AI agents.",
   "type": "module",
   "license": "MIT",
   "engines": { "node": ">=22" },
-  "bin": { "a2a": "bin/a2a.js" },
+  "bin": { "s2s": "bin/s2s.js" },
   "exports": { ".": { "types": "./src/index.d.ts", "import": "./src/index.js" } },
-  "files": ["bin", "src", "schema", "README.md", "LICENSE"],
-  "scripts": { "test": "node --test", "check": "node --check src/index.js && node --check bin/a2a.js" }
+  "files": ["bin", "src", "schema", "README.md", "CHANGELOG.md", "LICENSE"],
+  "scripts": { "test": "node --test", "check": "node --check src/index.js && node --check bin/s2s.js" }
 }
