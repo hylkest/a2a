@@ -6,20 +6,6 @@ An agent can hand over what it did, why it made decisions, what it checked, what
 
 **Version:** 0.3.0. Not published to npm. Requires Node.js 22+. s2s stands for session to session. This project implements a file-based handoff format.
 
-## Migrating to s2s
-
-The package, executable, protocol identifier and default directory have been
-renamed. Reinstall this package using the s2s instructions below. Move existing
-handoffs to `.s2s/` and change their JSON `protocol` field to `"s2s"`. Other
-protocol fields and artifact hashes remain unchanged. The protocol version
-stays `1.0`; the previous identifier is no longer accepted.
-
-Remove the previous managed instruction block from `AGENTS.md`, then run
-`s2s init` to generate the new one. Keep all unrelated project instructions.
-Update any project scripts, imports, ignore rules and CI commands to use s2s.
-The GitHub installation URLs assume the repository is renamed to `hylkest/s2s`;
-this local change does not rename the remote repository automatically.
-
 ## Installation
 
 Requires **Node.js 22 or newer**. Choose either installation method below.

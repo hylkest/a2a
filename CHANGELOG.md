@@ -6,6 +6,10 @@ versions are independent.
 
 ## [Unreleased]
 
+### Changed
+
+- Removed the rename migration section from the README.
+
 ## [0.3.0] — 2026-10-02
 
 ### Added
