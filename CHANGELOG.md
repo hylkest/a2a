@@ -3,9 +3,10 @@
 User-facing changes to s2s are recorded here. New changes belong under
 **Unreleased** until a release is published. Package and handoff protocol
 versions are independent.
-The next planned package release is `0.3.0`.
 
 ## [Unreleased]
+
+## [0.3.0] — 2026-10-02
 
 ### Added
 
@@ -15,6 +16,7 @@ The next planned package release is `0.3.0`.
 - Handoffs capture Git branch, commit and dirty state when available. Resume
   compares the current checkout and highlights differences and uncommitted work.
 - This changelog to track user-facing changes and release notes.
+- Included the changelog in the distributed package.
 
 ### Fixed
 
@@ -28,7 +30,6 @@ The next planned package release is `0.3.0`.
   (session to session). The default handoff directory is now `.s2s/`.
   Existing users must reinstall the renamed package, move their handoffs,
   change the JSON `protocol` value to `s2s` and regenerate agent instructions.
-- Package metadata updated to version `0.2.0` to match the published release.
 
 ## [0.2.0]
 
