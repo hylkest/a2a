@@ -7,6 +7,30 @@ import { execFileSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { captureGitContext } from '../src/index.js';
 
+test('resume verifies artifacts before context and distinguishes completed and blocked tasks', async t => {
+  const root = await mkdtemp(path.join(tmpdir(), 's2s-resume-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const cli = path.resolve('bin/s2s.js');
+  const run = (...args) => execFileSync(process.execPath, [cli, ...args], { cwd: root, encoding: 'utf8', stdio: 'pipe' });
+  await writeFile(path.join(root, 'app.js'), 'original');
+  run('handoff', '--task', 'Review app', '--summary', 'Review needed', '--artifact', 'app.js');
+  assert.match(run('resume', '.s2s/handoff.json'), /1\/1 referenced files unchanged/);
+  await writeFile(path.join(root, 'app.js'), 'changed');
+  assert.throws(() => run('resume', '.s2s/handoff.json'), error => {
+    const output = error.stdout.toString();
+    return error.status === 1 && output.indexOf('Artifact changed: app.js') < output.indexOf('# Agent handoff');
+  });
+  await rm(path.join(root, 'app.js'));
+  assert.throws(() => run('resume', '.s2s/handoff.json'), error => error.status === 1 && /Artifact missing/.test(error.stdout.toString()));
+  run('handoff', '--replace', '--task', 'Review app', '--summary', 'Done', '--status', 'complete', '--next', 'Old step');
+  const complete = run('resume', '.s2s/handoff.json');
+  assert.match(complete, /Nothing to resume/);
+  assert.match(complete, /historical context/);
+  assert.match(complete, /No artifacts recorded/);
+  run('status', '.s2s/handoff.json', 'blocked');
+  assert.match(run('resume', '.s2s/handoff.json', '--root', root), /Task blocked/);
+});
+
 test('list handles empty directories, multiple handoffs and invalid files', async t => {
   const root = await mkdtemp(path.join(tmpdir(), 's2s-list-'));
   t.after(() => rm(root, { recursive: true, force: true }));

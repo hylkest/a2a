@@ -1,10 +1,12 @@
 # s2s
 
+**Session to Session** — carry context, decisions and next steps between AI agent sessions.
+
 Portable, verifiable task handoffs between AI agents. A small open-source protocol, Node.js SDK and CLI. No model provider, hosted service or dependencies required.
 
 An agent can hand over what it did, why it made decisions, what it checked, what remains uncertain and which files matter. The next agent receives structured context instead of an entire conversation. File hashes help detect stale references.
 
-**Version:** 0.3.0. Not published to npm. Requires Node.js 22+. s2s stands for session to session. This project implements a file-based handoff format.
+**Version:** 0.3.0. Not published to npm. Requires Node.js 22+. This project implements a file-based handoff format.
 
 ## Installation
 
@@ -214,7 +216,7 @@ The SDK exposes `captureGitContext({ root })`; assign its non-null result to
 
 `resume <file> [--root <workspace>]` displays the recorded context and compares
 it with the receiving checkout. Differences are advisory and do not change the
-exit code or switch branches. Dirty state is a boolean, not a snapshot: matching
+exit code or switch branches. Artifact mismatches do return exit code `1`. Dirty state is a boolean, not a snapshot: matching
 commits cannot prove that uncommitted work matches. Use `verify` for referenced
 files. Creating or editing a handoff can itself make a tracked workspace dirty.
 Existing editing commands do not refresh Git metadata; create a fresh handoff
@@ -229,7 +231,7 @@ No remotes, diffs, credentials or file contents are stored in Git metadata.
 - `verify` compares artifacts with the current filesystem. `--root` selects the receiving workspace.
 - Exit codes: `0` success, `1` artifact mismatch/unavailability, `2` invalid input or operational error.
 - Artifact traversal and symlinks resolving outside the workspace are rejected.
-- `resume` does not verify artifacts automatically. Run `verify` before trusting references.
+- `resume` automatically verifies artifacts and puts warnings before the handoff.
 
 ## Agent integration
 
@@ -260,3 +262,16 @@ Contributions should preserve protocol compatibility and include tests for chang
 ## License
 
 MIT.
+
+### Resume overview
+
+` s2s resume <file> ` checks referenced files automatically, then prints a
+status overview and any artifact or Git warnings before the recorded context.
+Changed, missing or unavailable artifacts return exit code `1` while still
+showing the handoff. Git warnings alone are advisory. Invalid handoffs return
+exit code `2`. `--root` selects the workspace for both checks.
+
+Completed tasks explicitly say there is nothing to resume; their recorded next
+steps remain visible as historical context. Blocked tasks ask the agent to
+review blockers first. Without artifacts, the overview states that no files
+were verified. Hash matches do not establish that the task or evidence is correct.
