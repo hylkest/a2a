@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, readdir } from 'node:fs/promises';
+import path from 'node:path';
 import { createHandoff, addArtifact, readHandoff, renderHandoff, validateHandoff, verifyArtifacts, captureGitContext } from '../src/index.js';
 
 const help = `a2a — portable agent handoffs
@@ -9,6 +10,7 @@ Commands:
   init                              Set up agent instructions in this project
   init <file> --task <goal> [--from <agent>] [--to <agent>]
   handoff [file] --task <goal> --summary <text> [options]
+  list [directory] [--json]          List handoffs (default: .a2a/)
   add <file> <decision|evidence|question|next|artifact> <value>
   summary <file> <text>
   status <file> <ready|blocked|complete>
@@ -47,6 +49,38 @@ try {
     console.log(pkg.version);
   }
   else if (!command || ['help', '--help', '-h'].includes(command)) console.log(help);
+  else if (command === 'list') {
+    const jsonIndex = args.indexOf('--json');
+    const json = jsonIndex >= 0;
+    if (json) args.splice(jsonIndex, 1);
+    if (args.length > 1 || args.some(arg => arg.startsWith('--'))) throw new Error('Usage: list [directory] [--json]');
+    const directory = args[0] ?? '.a2a';
+    let entries;
+    try { entries = await readdir(directory, { withFileTypes: true }); }
+    catch (error) {
+      if (error.code !== 'ENOENT' || args.length) throw error;
+      entries = [];
+    }
+    const results = [];
+    for (const entry of entries.filter(entry => entry.isFile() && entry.name.endsWith('.json')).sort((a, b) => a.name.localeCompare(b.name))) {
+      const file = path.join(directory, entry.name);
+      try {
+        const handoff = await readHandoff(file);
+        results.push({ file, task: handoff.task, status: handoff.status, from: handoff.from, to: handoff.to, createdAt: handoff.createdAt });
+      } catch (error) { results.push({ file, status: 'invalid', error: error.message }); }
+    }
+    if (json) console.log(JSON.stringify(results, null, 2));
+    else if (!results.length) console.log(`No handoffs found in ${directory}.`);
+    else {
+      const text = value => String(value).replace(/[\x00-\x1f\x7f-\x9f]/g, ' ');
+      console.log('STATUS    FILE — TASK');
+      for (const item of results) {
+        console.log(`${item.status.padEnd(9)} ${text(item.file)} — ${text(item.task ?? item.error)}`);
+        if (item.task) console.log(`          ${text(item.from)} → ${text(item.to)} | ${item.createdAt}`);
+      }
+    }
+    if (results.some(item => item.status === 'invalid')) process.exitCode = 1;
+  }
   else if (command === 'handoff') {
     const replaceIndex = args.indexOf('--replace');
     const replace = replaceIndex >= 0;
@@ -111,6 +145,7 @@ tasks unless the user asks. For a new task, use a new handoff file or explicitly
 replace the previous handoff after reading it.
 
 Commands:
+- npx --no-install a2a list
 - npx --no-install a2a handoff --task "Your current task" --summary "Current state" --decision "Choice and reason" --evidence "Check and result" --next "Next action" --artifact path/to/file
 - Add --replace when updating an existing handoff; provide a complete snapshot.
 - npx --no-install a2a init .a2a/handoff.json --task "Your current task"

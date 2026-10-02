@@ -7,6 +7,32 @@ import { execFileSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { captureGitContext } from '../src/index.js';
 
+test('list handles empty directories, multiple handoffs and invalid files', async t => {
+  const root = await mkdtemp(path.join(tmpdir(), 'a2a-list-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const cli = path.resolve('bin/a2a.js');
+  const run = (...args) => execFileSync(process.execPath, [cli, ...args], { cwd: root, encoding: 'utf8', stdio: 'pipe' });
+  assert.deepEqual(JSON.parse(run('list', '--json')), []);
+  assert.match(run('list'), /No handoffs/);
+  assert.throws(() => run('list', 'missing'), error => error.status === 2);
+  run('handoff', '.a2a/b.json', '--task', 'Second task', '--summary', 'Ready', '--status', 'blocked');
+  run('handoff', '.a2a/a.json', '--task', 'First task', '--summary', 'Done', '--status', 'complete');
+  const results = JSON.parse(run('list', '--json'));
+  assert.deepEqual(results.map(item => item.task), ['First task', 'Second task']);
+  assert.deepEqual(results.map(item => item.status), ['complete', 'blocked']);
+  assert.match(run('list', '.a2a'), /Second task/);
+  await writeFile(path.join(root, '.a2a/ignore.txt'), 'not JSON');
+  await symlink(path.join(root, '.a2a/a.json'), path.join(root, '.a2a/link.json'));
+  assert.equal(JSON.parse(run('list', '--json')).length, 2);
+  await writeFile(path.join(root, '.a2a/broken.json'), '{');
+  assert.throws(() => run('list', '--json'), error => {
+    const output = JSON.parse(error.stdout.toString());
+    return error.status === 1 && output.length === 3 && output.some(item => item.status === 'invalid');
+  });
+  assert.throws(() => run('list'), error => error.status === 1 && /First task/.test(error.stdout.toString()) && /invalid/.test(error.stdout.toString()));
+  assert.throws(() => run('list', '--unknown'), error => error.status === 2);
+});
+
 test('Git context captures checkout state and resume detects different commits', async t => {
   const root = await mkdtemp(path.join(tmpdir(), 'a2a-git-'));
   t.after(() => rm(root, { recursive: true, force: true }));

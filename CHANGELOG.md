@@ -9,6 +9,8 @@ The next planned package release is `0.3.0`.
 
 ### Added
 
+- `a2a list` lists handoff tasks, statuses, agent labels and creation times,
+  with custom directory and JSON output support. Invalid files are reported.
 - `a2a --version` displays the installed package version from any directory.
 - Handoffs capture Git branch, commit and dirty state when available. Resume
   compares the current checkout and highlights differences and uncommitted work.

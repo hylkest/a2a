@@ -184,6 +184,25 @@ All fields are required; lists can be empty. Unknown fields are allowed for exte
 
 ## CLI behavior
 
+### List handoffs
+
+```bash
+a2a list
+a2a list handoffs
+a2a list --json
+```
+
+The default directory is `.a2a/`. The command lists regular `.json` files
+directly in that directory, alphabetically by filename; it does not recurse
+or follow symlinks. Each valid handoff shows its file, task, status, agent
+labels and creation timestamp. Empty or missing default directories return
+an empty list successfully. An explicitly selected missing directory is an error.
+Invalid JSON or protocol data is reported without hiding valid handoffs;
+exit code `1` indicates invalid files and `2` indicates usage or directory errors.
+`--json` returns an array for scripts. Listing does not verify artifacts or Git
+state; use `verify` and `resume` for those checks. With npm-free installs, use
+`node /absolute/path/to/a2a/bin/a2a.js list`.
+
 ### Git context
 
 `handoff` and `init <file> --task ...` automatically record the workspace's
