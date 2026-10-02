@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "a2a handoff 1.0",
+  "title": "s2s handoff 1.0",
   "type": "object",
   "required": ["protocol", "version", "id", "createdAt", "task", "summary", "from", "to", "status", "decisions", "evidence", "questions", "nextSteps", "artifacts"],
   "$defs": {
@@ -8,7 +8,7 @@
     "entries": { "type": "array", "items": { "$ref": "#/$defs/text" } }
   },
   "properties": {
-    "protocol": { "const": "a2a" },
+    "protocol": { "const": "s2s" },
     "version": { "const": "1.0" },
     "git": {
       "type": "object",

@@ -1,7 +1,7 @@
 export interface Artifact { path: string; sha256: string }
 export interface GitContext { branch: string | null; commit: string | null; dirty: boolean }
 export interface Handoff {
-  protocol: 'a2a'; version: '1.0'; id: string; createdAt: string;
+  protocol: 's2s'; version: '1.0'; id: string; createdAt: string;
   task: string; summary: string; from: string; to: string;
   status: 'ready' | 'blocked' | 'complete';
   decisions: string[]; evidence: string[]; questions: string[];

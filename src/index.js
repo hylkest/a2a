@@ -21,7 +21,7 @@ const statuses = ['ready', 'blocked', 'complete'];
 const arrays = ['decisions', 'evidence', 'questions', 'nextSteps', 'artifacts'];
 
 export function createHandoff({ task, summary = '', from = 'unknown', to = 'any', status = 'ready' } = {}) {
-  const handoff = { protocol: 'a2a', version: PROTOCOL_VERSION, id: randomUUID(), createdAt: new Date().toISOString(), task, summary, from, to, status, decisions: [], evidence: [], questions: [], nextSteps: [], artifacts: [] };
+  const handoff = { protocol: 's2s', version: PROTOCOL_VERSION, id: randomUUID(), createdAt: new Date().toISOString(), task, summary, from, to, status, decisions: [], evidence: [], questions: [], nextSteps: [], artifacts: [] };
   assertValid(handoff);
   return handoff;
 }
@@ -29,7 +29,7 @@ export function createHandoff({ task, summary = '', from = 'unknown', to = 'any'
 export function validateHandoff(value) {
   const errors = [];
   if (!value || typeof value !== 'object' || Array.isArray(value)) return { valid: false, errors: ['Handoff must be an object'] };
-  if (value.protocol !== 'a2a') errors.push('protocol must be a2a');
+  if (value.protocol !== 's2s') errors.push('protocol must be s2s');
   if (value.version !== PROTOCOL_VERSION) errors.push(`Unsupported version: ${value.version}`);
   for (const key of ['id', 'createdAt', 'task', 'from', 'to']) if (typeof value[key] !== 'string' || !value[key].trim()) errors.push(`${key} must be a non-empty string`);
   if (typeof value.createdAt === 'string' && !Number.isFinite(Date.parse(value.createdAt))) errors.push('createdAt must be a timestamp');

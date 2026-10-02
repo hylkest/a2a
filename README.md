@@ -1,10 +1,24 @@
-# a2a
+# s2s
 
 Portable, verifiable task handoffs between AI agents. A small open-source protocol, Node.js SDK and CLI. No model provider, hosted service or dependencies required.
 
 An agent can hand over what it did, why it made decisions, what it checked, what remains uncertain and which files matter. The next agent receives structured context instead of an entire conversation. File hashes help detect stale references.
 
-**Status:** working initial release, not published to npm. Requires Node.js 22+. a2a stands for agent to agent. This project implements a file-based handoff format; it does not implement the separate Agent2Agent interoperability protocol.
+**Status:** working initial release, not published to npm. Requires Node.js 22+. s2s stands for session to session. This project implements a file-based handoff format.
+
+## Migrating to s2s
+
+The package, executable, protocol identifier and default directory have been
+renamed. Reinstall this package using the s2s instructions below. Move existing
+handoffs to `.s2s/` and change their JSON `protocol` field to `"s2s"`. Other
+protocol fields and artifact hashes remain unchanged. The protocol version
+stays `1.0`; the previous identifier is no longer accepted.
+
+Remove the previous managed instruction block from `AGENTS.md`, then run
+`s2s init` to generate the new one. Keep all unrelated project instructions.
+Update any project scripts, imports, ignore rules and CI commands to use s2s.
+The GitHub installation URLs assume the repository is renamed to `hylkest/s2s`;
+this local change does not rename the remote repository automatically.
 
 ## Installation
 
@@ -17,34 +31,34 @@ project where your agents work:
 
 ```bash
 cd your-project
-npm install --save-dev git+https://github.com/hylkest/a2a.git
-npx --no-install a2a init
+npm install --save-dev git+https://github.com/hylkest/s2s.git
+npx --no-install s2s init
 ```
 
-This package is not published to npm. Do not use `npm install a2a` expecting
+This package is not published to npm. Do not use `npm install s2s` expecting
 this project. For reproducible installs, pin a release tag or commit in the
 GitHub dependency URL. Commit your package.json and lockfile.
 
 ### Option 2: Clone and run without npm
 
-a2a has no external dependencies. You only need Git and Node.js:
+s2s has no external dependencies. You only need Git and Node.js:
 
 ```bash
-git clone https://github.com/hylkest/a2a.git ~/a2a
+git clone https://github.com/hylkest/s2s.git ~/s2s
 cd /absolute/path/to/your-project
-node ~/a2a/bin/a2a.js init
+node ~/s2s/bin/s2s.js init
 ```
 
-The setup currently generates commands using `npx --no-install a2a`.
+The setup currently generates commands using `npx --no-install s2s`.
 For this npm-free method, replace **every occurrence** of that command in
-your project's `AGENTS.md` with `node /absolute/path/to/a2a/bin/a2a.js`.
+your project's `AGENTS.md` with `node /absolute/path/to/s2s/bin/s2s.js`.
 Use the actual absolute path to your clone, so your agent can execute it.
 
 Run subsequent commands from your own project directory, for example:
 
 ```bash
-node ~/a2a/bin/a2a.js init .a2a/handoff.json --task "Build a login"
-node ~/a2a/bin/a2a.js resume .a2a/handoff.json
+node ~/s2s/bin/s2s.js init .s2s/handoff.json --task "Build a login"
+node ~/s2s/bin/s2s.js resume .s2s/handoff.json
 ```
 
 You do not need `npm install` or a global installation. Restart your agent
@@ -55,37 +69,37 @@ different package if the local dependency is missing.
 
 ## Set up your agent
 
-Running `a2a init` without arguments:
+Running `s2s init` without arguments:
 
 - Adds a marked instruction block to `AGENTS.md`, preserving existing text.
-- Creates `.a2a/` for handoffs without modifying `.gitignore`.
-- Updates an existing marked a2a instruction block to the current template.
+- Creates `.s2s/` for handoffs without modifying `.gitignore`.
+- Updates an existing marked s2s instruction block to the current template.
 - Preserves all text outside that block and avoids rewriting unchanged instructions.
 
-After upgrading a2a, run `a2a init` again to refresh the agent instructions.
+After upgrading s2s, run `s2s init` again to refresh the agent instructions.
 Keep custom rules (including npm-free command overrides) outside the managed
-`<!-- a2a:instructions -->` block; its contents are replaced during updates.
+`<!-- s2s:instructions -->` block; its contents are replaced during updates.
 Reapply npm-free command replacements after updating. Incomplete, reversed or
 duplicate markers cause an error without changing `AGENTS.md`.
 
 Restart your agent session after setup. Agents that read `AGENTS.md` will
-receive instructions to check `.a2a/handoff.json` at startup and update it
+receive instructions to check `.s2s/handoff.json` at startup and update it
 before handing off work. Commit `AGENTS.md` to share the workflow with your team.
-For agents that use another instruction file, reference the a2a section of
+For agents that use another instruction file, reference the s2s section of
 `AGENTS.md` from their project instructions.
 
 ### Share handoffs with your team
 
-Commit reviewed `.a2a/` handoffs alongside the code so teammates and their
+Commit reviewed `.s2s/` handoffs alongside the code so teammates and their
 agents receive the same context. Review for secrets and private information;
-a2a does not automatically redact them. Use separate handoff filenames when
+s2s does not automatically redact them. Use separate handoff filenames when
 working on different tasks to reduce conflicts.
 
-Older versions added `.a2a/` to `.gitignore`. Remove that rule to enable
+Older versions added `.s2s/` to `.gitignore`. Remove that rule to enable
 sharing; setup leaves existing rules intact and prints a note when it finds
-an explicit `.a2a` rule. For broader or global ignore patterns, use
-`git check-ignore -v .a2a/handoff.json` to diagnose them.
-If you prefer private local handoffs, add `.a2a/` to `.gitignore` yourself.
+an explicit `.s2s` rule. For broader or global ignore patterns, use
+`git check-ignore -v .s2s/handoff.json` to diagnose them.
+If you prefer private local handoffs, add `.s2s/` to `.gitignore` yourself.
 
 This is instruction-based integration, not an automatic lifecycle hook.
 An agent must follow the instructions and have command execution available.
@@ -95,10 +109,10 @@ Completed handoffs are not instructions to restart completed work.
 
 ## Save a complete handoff in one command
 
-From your project directory, after installing a2a:
+From your project directory, after installing s2s:
 
 ```bash
-npx --no-install a2a handoff \
+npx --no-install s2s handoff \
   --task "Build login" \
   --summary "Implementation is ready for review." \
   --from implementer --to reviewer \
@@ -109,7 +123,7 @@ npx --no-install a2a handoff \
   --artifact src/login.js
 ```
 
-This creates `.a2a/handoff.json` and its parent directory. Each referenced
+This creates `.s2s/handoff.json` and its parent directory. Each referenced
 file is read and hashed before saving; missing or inaccessible artifacts
 fail the command without changing an existing handoff. Use actual file paths
 from your project. Hashes capture the current file state, not proof that tests passed.
@@ -122,25 +136,25 @@ for the workspace used to resolve artifact paths.
 Existing handoffs are protected. To update one, read it first, then run the
 command with **`--replace` and a complete snapshot**. This replaces all fields
 and gives the new handoff a fresh ID and timestamp; it does not merge old lists.
-Omitted lists become empty. Without npm, replace `npx --no-install a2a` with
-`node /absolute/path/to/a2a/bin/a2a.js`.
+Omitted lists become empty. Without npm, replace `npx --no-install s2s` with
+`node /absolute/path/to/s2s/bin/s2s.js`.
 
 ## Try it locally
 
 ```bash
-node bin/a2a.js init handoff.json --task "Fix checkout validation" --from implementer --to reviewer
-node bin/a2a.js summary handoff.json "Validation added; review still needed."
-node bin/a2a.js add handoff.json decision "Validate server-side because client checks can be bypassed."
-node bin/a2a.js add handoff.json evidence "Unit tests passed; payment sandbox was unavailable."
-node bin/a2a.js add handoff.json question "Should expired carts remain visible?"
-node bin/a2a.js add handoff.json next "Review the implementation and run the sandbox flow."
-node bin/a2a.js add handoff.json artifact src/index.js
-node bin/a2a.js validate handoff.json
-node bin/a2a.js verify handoff.json
-node bin/a2a.js resume handoff.json
+node bin/s2s.js init handoff.json --task "Fix checkout validation" --from implementer --to reviewer
+node bin/s2s.js summary handoff.json "Validation added; review still needed."
+node bin/s2s.js add handoff.json decision "Validate server-side because client checks can be bypassed."
+node bin/s2s.js add handoff.json evidence "Unit tests passed; payment sandbox was unavailable."
+node bin/s2s.js add handoff.json question "Should expired carts remain visible?"
+node bin/s2s.js add handoff.json next "Review the implementation and run the sandbox flow."
+node bin/s2s.js add handoff.json artifact src/index.js
+node bin/s2s.js validate handoff.json
+node bin/s2s.js verify handoff.json
+node bin/s2s.js resume handoff.json
 ```
 
-After installing the package locally with `npm link`, use `a2a` instead of `node bin/a2a.js`. `resume` prints Markdown; pass it as context to another agent using your existing workflow. a2a does not launch agents or execute the recorded next steps.
+After installing the package locally with `npm link`, use `s2s` instead of `node bin/s2s.js`. `resume` prints Markdown; pass it as context to another agent using your existing workflow. s2s does not launch agents or execute the recorded next steps.
 
 ## JavaScript API
 
@@ -161,7 +175,7 @@ await writeHandoff('handoff.json', handoff);
 console.log(renderHandoff(handoff));
 ```
 
-The SDK includes TypeScript declarations. Once installed as a package, import from `a2a`.
+The SDK includes TypeScript declarations. Once installed as a package, import from `s2s`.
 
 ## Protocol 1.0
 
@@ -187,12 +201,12 @@ All fields are required; lists can be empty. Unknown fields are allowed for exte
 ### List handoffs
 
 ```bash
-a2a list
-a2a list handoffs
-a2a list --json
+s2s list
+s2s list handoffs
+s2s list --json
 ```
 
-The default directory is `.a2a/`. The command lists regular `.json` files
+The default directory is `.s2s/`. The command lists regular `.json` files
 directly in that directory, alphabetically by filename; it does not recurse
 or follow symlinks. Each valid handoff shows its file, task, status, agent
 labels and creation timestamp. Empty or missing default directories return
@@ -201,7 +215,7 @@ Invalid JSON or protocol data is reported without hiding valid handoffs;
 exit code `1` indicates invalid files and `2` indicates usage or directory errors.
 `--json` returns an array for scripts. Listing does not verify artifacts or Git
 state; use `verify` and `resume` for those checks. With npm-free installs, use
-`node /absolute/path/to/a2a/bin/a2a.js list`.
+`node /absolute/path/to/s2s/bin/s2s.js list`.
 
 ### Git context
 
@@ -222,9 +236,9 @@ with `handoff --replace` to capture the current context.
 
 No remotes, diffs, credentials or file contents are stored in Git metadata.
 
-- Run `a2a --version` to show the installed package version (currently `0.2.0`).
-  With a local npm dependency, use `npx --no-install a2a --version`; without
-  npm, use `node /absolute/path/to/a2a/bin/a2a.js --version`.
+- Run `s2s --version` to show the installed package version (currently `0.2.0`).
+  With a local npm dependency, use `npx --no-install s2s --version`; without
+  npm, use `node /absolute/path/to/s2s/bin/s2s.js --version`.
 - `init` without arguments configures the project; `init <file> --task <goal>` refuses to overwrite a handoff file. `add`, `summary` and `status` update it.
 - `verify` compares artifacts with the current filesystem. `--root` selects the receiving workspace.
 - Exit codes: `0` success, `1` artifact mismatch/unavailability, `2` invalid input or operational error.
@@ -235,7 +249,7 @@ No remotes, diffs, credentials or file contents are stored in Git metadata.
 
 Ask your agent to create a handoff before stopping or delegating:
 
-> Write an a2a handoff. Include the task, current state, decisions with reasons, checks actually performed, open questions and concrete next steps. Reference the files another agent should inspect. Clearly distinguish observations from assumptions.
+> Write an s2s handoff. Include the task, current state, decisions with reasons, checks actually performed, open questions and concrete next steps. Reference the files another agent should inspect. Clearly distinguish observations from assumptions.
 
 For the receiving agent:
 
